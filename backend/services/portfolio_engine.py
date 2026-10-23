@@ -14,7 +14,7 @@ class PortfolioIntelligenceEngine:
             {"symbol": "RELIANCE.NS", "shares": 60, "cost_basis": 2750.0},
             {"symbol": "TCS.NS", "shares": 35, "cost_basis": 3850.0},
             {"symbol": "HDFCBANK.NS", "shares": 90, "cost_basis": 1580.0},
-            {"symbol": "TATAMOTORS.NS", "shares": 120, "cost_basis": 890.0},
+            {"symbol": "ICICIBANK.NS", "shares": 100, "cost_basis": 1150.0},
             {"symbol": "NVDA", "shares": 15, "cost_basis": 115.0},
             {"symbol": "GC=F", "shares": 3, "cost_basis": 2550.0}
         ]

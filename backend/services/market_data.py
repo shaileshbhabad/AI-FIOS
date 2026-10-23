@@ -7,9 +7,13 @@ import math
 import time
 import random
 import datetime
+import logging
 from typing import Dict, Any, List, Optional
 import pandas as pd
 import numpy as np
+
+# Suppress yfinance internal warning logs on console
+logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 
 try:
     import yfinance as yf

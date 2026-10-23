@@ -178,10 +178,12 @@ export default function Navbar({
                 <option value="BHARTIARTL.NS">BHARTIARTL.NS · Airtel</option>
                 <option value="ITC.NS">ITC.NS · ITC Ltd</option>
                 <option value="LT.NS">LT.NS · Larsen & Toubro</option>
-                <option value="TATAMOTORS.NS">TATAMOTORS.NS · Tata Motors</option>
+                <option value="AXISBANK.NS">AXISBANK.NS · Axis Bank</option>
+                <option value="KOTAKBANK.NS">KOTAKBANK.NS · Kotak Bank</option>
                 <option value="MARUTI.NS">MARUTI.NS · Maruti Suzuki</option>
                 <option value="BAJFINANCE.NS">BAJFINANCE.NS · Bajaj Fin</option>
-                <option value="ZOMATO.NS">ZOMATO.NS · Zomato</option>
+                <option value="HCLTECH.NS">HCLTECH.NS · HCL Tech</option>
+                <option value="ASIANPAINT.NS">ASIANPAINT.NS · Asian Paints</option>
                 <option value="^NSEI">^NSEI · NIFTY 50</option>
                 <option value="^BSESN">^BSESN · SENSEX</option>
               </optgroup>
