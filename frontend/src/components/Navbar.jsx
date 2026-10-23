@@ -8,14 +8,15 @@ import {
   Sliders, 
   Briefcase, 
   FileText, 
-  Search,
-  Zap,
-  Globe2,
-  Key,
-  IndianRupee,
-  DollarSign,
-  Check,
-  X
+  Search, 
+  Zap, 
+  Globe2, 
+  Key, 
+  IndianRupee, 
+  DollarSign, 
+  Check, 
+  X,
+  Star
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -28,7 +29,8 @@ export default function Navbar({
   setCurrency,
   marketFilter = 'All',
   setMarketFilter,
-  onOpenCommandPalette
+  onOpenCommandPalette,
+  favorites = []
 }) {
   const [showSettings, setShowSettings] = useState(false);
   const [provider, setProvider] = useState('groq');
@@ -38,6 +40,7 @@ export default function Navbar({
 
   const tabs = [
     { id: 'terminal', label: 'Terminal', icon: Activity },
+    { id: 'favorites', label: 'Favorites', icon: Star, count: favorites.length },
     { id: 'debate', label: 'Agent Arena', icon: Cpu },
     { id: 'graph', label: 'Causal Graph', icon: Network },
     { id: 'explainability', label: 'Trust & XAI', icon: Layers },
@@ -120,8 +123,15 @@ export default function Navbar({
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? (tab.id === 'favorites' ? 'text-amber-400' : 'text-cyan-400') : (tab.id === 'favorites' ? 'text-amber-500' : 'text-slate-400')}`} />
                 <span>{tab.label}</span>
+                {typeof tab.count === 'number' && tab.count > 0 && (
+                  <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold font-mono ml-0.5 ${
+                    isActive ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-amber-400 border border-amber-500/30'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
               </button>
             );
           })}

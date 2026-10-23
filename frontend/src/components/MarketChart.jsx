@@ -22,7 +22,8 @@ import {
   DollarSign,
   IndianRupee,
   Activity,
-  Maximize2
+  Maximize2,
+  Star
 } from 'lucide-react';
 
 export default function MarketChart({ 
@@ -31,7 +32,9 @@ export default function MarketChart({
   timeframe = '1M', 
   setTimeframe, 
   orderBook = {},
-  currency = 'INR'
+  currency = 'INR',
+  favorites = [],
+  onToggleFavorite
 }) {
   const [showSMA, setShowSMA] = useState(true);
   const [showBB, setShowBB] = useState(false);
@@ -94,6 +97,22 @@ export default function MarketChart({
             <h1 className="text-3xl font-black text-slate-100 tracking-wide font-mono">
               {summary?.symbol || 'RELIANCE.NS'}
             </h1>
+
+            {/* Favorite Star Toggle Button */}
+            {onToggleFavorite && (
+              <button
+                onClick={() => onToggleFavorite(summary?.symbol || 'RELIANCE.NS')}
+                className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                  favorites.includes(summary?.symbol || 'RELIANCE.NS')
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]'
+                    : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-amber-400 hover:border-slate-700'
+                }`}
+                title={favorites.includes(summary?.symbol || 'RELIANCE.NS') ? 'Remove from Favorites' : 'Add to Favorites'}
+              >
+                <Star className={`w-4 h-4 ${favorites.includes(summary?.symbol || 'RELIANCE.NS') ? 'fill-current' : ''}`} />
+              </button>
+            )}
+
             <span className="text-base text-slate-300 font-medium">
               {summary?.name || 'Reliance Industries'}
             </span>

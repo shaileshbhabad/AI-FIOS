@@ -10,6 +10,7 @@ import ScenarioSimulator from './components/ScenarioSimulator';
 import PortfolioTester from './components/PortfolioTester';
 import ResearchMemoViewer from './components/ResearchMemoViewer';
 import CommandPalette from './components/CommandPalette';
+import FavoritesTab from './components/FavoritesTab';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('terminal');
@@ -18,6 +19,28 @@ export default function App() {
   const [currency, setCurrency] = useState('INR'); // Default INR ₹
   const [marketFilter, setMarketFilter] = useState('All');
   const [isCommandOpen, setIsCommandOpen] = useState(false);
+
+  // Favorites Watchlist with LocalStorage Persistence
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ai_fios_favorites');
+      return saved ? JSON.parse(saved) : ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'NVDA', 'GC=F'];
+    } catch {
+      return ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'NVDA', 'GC=F'];
+    }
+  });
+
+  const toggleFavorite = (symbol) => {
+    setFavorites((prev) => {
+      const next = prev.includes(symbol)
+        ? prev.filter((s) => s !== symbol)
+        : [...prev, symbol];
+      try {
+        localStorage.setItem('ai_fios_favorites', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
 
   // API Data States
   const [watchlist, setWatchlist] = useState([]);
@@ -195,6 +218,7 @@ export default function App() {
         marketFilter={marketFilter}
         setMarketFilter={setMarketFilter}
         onOpenCommandPalette={setIsCommandOpen}
+        favorites={favorites}
       />
 
       {/* Global Command Palette (Ctrl + K) */}
@@ -230,6 +254,8 @@ export default function App() {
               setTimeframe={setTimeframe}
               orderBook={orderBook}
               currency={currency}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
             />
 
             {/* Quick Agent Synthesis Preview inside Terminal */}
@@ -261,6 +287,17 @@ export default function App() {
               </div>
             )}
           </div>
+        )}
+
+        {activeTab === 'favorites' && (
+          <FavoritesTab
+            favorites={favorites}
+            onToggleFavorite={toggleFavorite}
+            watchlist={watchlist}
+            onSelectAsset={(sym) => setSelectedAsset(sym)}
+            onNavigateTab={(tabId) => setActiveTab(tabId)}
+            currency={currency}
+          />
         )}
 
         {activeTab === 'debate' && (
