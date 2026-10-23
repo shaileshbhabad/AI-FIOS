@@ -97,8 +97,9 @@ class ExplainabilityEngine:
             else:
                 contradicting_evidence.append(card)
 
-        # Expected price target calculation
-        current_p = asset_summary.get("current_price", 100.0)
+        # Expected price target calculation in active currency
+        curr_sym = asset_summary.get("currency_symbol", "₹")
+        current_p = asset_summary.get("display_price", asset_summary.get("current_price", 100.0))
         expected_move_pct = round(
             (6.5 if dominant_stance == "BULLISH" else (-5.8 if dominant_stance == "BEARISH" else 1.2)) *
             (overall_confidence / 100.0),
@@ -117,6 +118,7 @@ class ExplainabilityEngine:
 
         return {
             "symbol": symbol,
+            "currency_symbol": curr_sym,
             "recommendation": dominant_stance,
             "overall_confidence": overall_confidence,
             "confidence_breakdown": {

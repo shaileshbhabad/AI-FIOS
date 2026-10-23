@@ -10,7 +10,7 @@ import {
   Lock 
 } from 'lucide-react';
 
-export default function ExplainabilityPanel({ explainabilityData, symbol }) {
+export default function ExplainabilityPanel({ explainabilityData, symbol, currency = 'INR' }) {
   if (!explainabilityData) {
     return (
       <div className="terminal-card p-8 rounded-xl text-center text-slate-500 font-mono text-xs">
@@ -18,6 +18,8 @@ export default function ExplainabilityPanel({ explainabilityData, symbol }) {
       </div>
     );
   }
+
+  const currSym = explainabilityData?.currency_symbol || (currency === 'INR' ? '₹' : '$');
 
   const {
     recommendation,
@@ -56,7 +58,7 @@ export default function ExplainabilityPanel({ explainabilityData, symbol }) {
                 </span>
               </div>
               <h2 className="text-xl font-black text-slate-100 mt-1">
-                Projected Move: {projected_movement_pct > 0 ? '+' : ''}{projected_movement_pct}% ➔ Target: ${projected_target_price}
+                Projected Move: {projected_movement_pct > 0 ? '+' : ''}{projected_movement_pct}% ➔ Target: {currSym}{typeof projected_target_price === 'number' ? projected_target_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : projected_target_price}
               </h2>
               <p className="text-xs text-slate-400 mt-1">
                 Synthesized across 11 domain agents with zero black-box hallucination. All inferences cite empirical balance sheets, price volumes, and macro transmissions.

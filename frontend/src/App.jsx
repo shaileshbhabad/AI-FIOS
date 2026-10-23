@@ -222,6 +222,7 @@ export default function App() {
                   <ExplainabilityPanel
                     explainabilityData={debateData.explainability}
                     symbol={selectedAsset}
+                    currency={currency}
                   />
                 </div>
                 <div className="lg:col-span-4 flex flex-col gap-3">
@@ -271,6 +272,7 @@ export default function App() {
           <ExplainabilityPanel
             explainabilityData={debateData?.explainability}
             symbol={selectedAsset}
+            currency={currency}
           />
         )}
 
