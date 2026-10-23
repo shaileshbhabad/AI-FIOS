@@ -12,11 +12,11 @@ export default function TickerTape({
   const currSym = currency === 'INR' ? '₹' : '$';
 
   return (
-    <div className="bg-[#04070d] border-b border-slate-800/80 overflow-hidden select-none py-1.5 px-3">
-      <div className="flex items-center gap-4 overflow-x-auto scrollbar-none py-0.5">
-        <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-md uppercase tracking-wider shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.2)]">
+    <div className="bg-[#04070d] border-b border-slate-800/80 overflow-hidden select-none py-2 px-3 sm:px-6">
+      <div className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto scrollbar-none touch-scroll py-0.5">
+        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-mono font-bold text-emerald-400 bg-emerald-950/50 border border-emerald-800/60 px-3 py-1.5 rounded-xl uppercase tracking-wider shrink-0 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          REAL-TIME TICKER ({currency})
+          REAL-TIME ({currency})
         </div>
 
         {watchlist.map((item) => {
@@ -29,10 +29,10 @@ export default function TickerTape({
             <button
               key={item.symbol}
               onClick={() => onSelectAsset(item.symbol)}
-              className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-all shrink-0 font-mono text-xs cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl transition-all shrink-0 font-mono text-xs cursor-pointer active:scale-95 ${
                 isSelected
-                  ? 'bg-slate-800 border border-cyan-500/60 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
-                  : 'bg-slate-900/50 border border-slate-800/50 hover:bg-slate-800/50 hover:border-slate-700'
+                  ? 'bg-slate-800 border border-cyan-500/70 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+                  : 'bg-slate-900/60 border border-slate-800 hover:bg-slate-800/60 hover:border-slate-700'
               }`}
             >
               <div className="flex items-center gap-1">
@@ -41,7 +41,7 @@ export default function TickerTape({
                 {item.country === 'US' && <span className="text-[10px]">🇺🇸</span>}
               </div>
 
-              <span className="text-slate-300 font-semibold">
+              <span className="text-slate-300 font-bold">
                 {itemSymbol}{typeof item.price === 'number' ? item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : item.price}{unit}
               </span>
 
@@ -51,7 +51,7 @@ export default function TickerTape({
               </span>
 
               {item.signal && (
-                <span className={`text-[8px] px-1 py-0.2 rounded font-sans uppercase font-bold tracking-tight ${
+                <span className={`text-[8px] px-1.5 py-0.2 rounded font-sans uppercase font-bold tracking-tight ${
                   item.signal === 'BULLISH'
                     ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
                     : item.signal === 'BEARISH'

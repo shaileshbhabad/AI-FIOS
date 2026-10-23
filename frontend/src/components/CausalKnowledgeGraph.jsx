@@ -7,7 +7,8 @@ import {
   RotateCcw,
   AlertTriangle,
   Layers,
-  Flame
+  Flame,
+  ChevronRight
 } from 'lucide-react';
 
 export default function CausalKnowledgeGraph({ 
@@ -23,6 +24,15 @@ export default function CausalKnowledgeGraph({
 
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
+
+  const quickScenarios = [
+    { id: 'comm_crude_oil', label: '🛢️ Crude Oil Disruption', intensity: 1.5 },
+    { id: 'geo_mideast_conflict', label: '⚔️ Mideast Conflict', intensity: 1.5 },
+    { id: 'macro_fed_rate_hike', label: '📈 Fed Rate Hike', intensity: 1.0 },
+    { id: 'ai_infrastructure_boom', label: '⚡ AI Capex Surge', intensity: 2.0 },
+    { id: 'geo_us_china_tariffs', label: '🛡️ US-China Tariffs', intensity: 1.5 },
+    { id: 'geo_red_sea_blockade', label: '🚢 Red Sea Blockade', intensity: 1.0 }
+  ];
 
   const nodeConfig = {
     geopolitical: { fill: '#ef4444', stroke: '#f87171', label: 'Geopolitical' },
@@ -82,14 +92,14 @@ export default function CausalKnowledgeGraph({
     setHighlightedEdges(connected);
   };
 
-  const handleSimulateShock = async () => {
-    if (!activeNode) return;
+  const handleSimulateShock = async (nodeToSim = activeNode, intensityVal = shockIntensity) => {
+    if (!nodeToSim) return;
     setLoadingShock(true);
     try {
       const res = await fetch('/api/knowledge-graph/simulate-shock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ node_id: activeNode.id, intensity: shockIntensity })
+        body: JSON.stringify({ node_id: nodeToSim.id, intensity: intensityVal })
       });
       if (res.ok) {
         const data = await res.json();
@@ -102,24 +112,31 @@ export default function CausalKnowledgeGraph({
     }
   };
 
+  const triggerQuickScenario = (scen) => {
+    const foundNode = nodes.find(n => n.id === scen.id) || { id: scen.id, label: scen.label, group: 'macro' };
+    handleNodeClick(foundNode);
+    setShockIntensity(scen.intensity);
+    handleSimulateShock(foundNode, scen.intensity);
+  };
+
   return (
-    <div className="flex flex-col gap-4 font-mono text-xs">
+    <div className="flex flex-col gap-3.5 sm:gap-5 font-mono text-xs">
       {/* Header */}
-      <div className="terminal-card p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="terminal-card p-4 sm:p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <Network className="w-5 h-5 text-cyan-400" />
-            <h2 className="text-lg font-black text-slate-100 tracking-wider">
-              INTERACTIVE CAUSAL KNOWLEDGE GRAPH & SHOCK SIMULATOR · LAYER 3
+            <h2 className="text-base sm:text-lg font-black text-slate-100 tracking-wider">
+              INTERACTIVE CAUSAL KNOWLEDGE GRAPH · LAYER 3
             </h2>
           </div>
-          <p className="text-slate-400 mt-1">
-            Click any macroeconomic event or commodity to simulate an exogenous disruption shockwave across the market.
+          <p className="text-slate-400 mt-1 text-xs">
+            Exogenous transmission modeling across supply chains, interest rates, commodities, and equities.
           </p>
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-2 flex-wrap text-[11px]">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap text-[10px] sm:text-[11px]">
           <span className="flex items-center gap-1 text-rose-400">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Geopolitical
           </span>
@@ -135,13 +152,37 @@ export default function CausalKnowledgeGraph({
         </div>
       </div>
 
+      {/* Quick Shock Trigger Chips Bar (Ideal for Touch / Mobile Screens) */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none touch-scroll pb-1">
+        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+          <Flame className="w-3.5 h-3.5 text-amber-400" />
+          Quick Shocks:
+        </span>
+        {quickScenarios.map((scen) => (
+          <button
+            key={scen.id}
+            onClick={() => triggerQuickScenario(scen)}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold whitespace-nowrap cursor-pointer transition-all active:scale-95 shrink-0 ${
+              activeNode?.id === scen.id
+                ? 'bg-gradient-to-r from-amber-500/30 to-rose-500/30 text-amber-300 border-amber-500/60 shadow-[0_0_12px_rgba(245,158,11,0.25)]'
+                : 'bg-slate-900/80 text-slate-300 border-slate-800 hover:border-slate-700'
+            }`}
+          >
+            {scen.label}
+          </button>
+        ))}
+      </div>
+
       {/* Main Graph Canvas & Inspector Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Interactive SVG Canvas */}
-        <div className="lg:col-span-8 terminal-card p-4 rounded-2xl overflow-x-auto min-h-[580px] flex items-center justify-center relative bg-[#050913]">
+        <div className="lg:col-span-8 terminal-card p-3 sm:p-4 rounded-2xl overflow-x-auto min-h-[460px] sm:min-h-[580px] flex flex-col items-center justify-center relative bg-[#050913]">
+          <div className="w-full text-right text-[10px] text-slate-500 mb-1 lg:hidden">
+            👈 Pan network horizontally to explore all nodes 👉
+          </div>
           <svg
             viewBox="0 0 980 800"
-            className="w-full h-[620px] select-none"
+            className="w-full min-w-[700px] h-[550px] sm:h-[620px] select-none"
           >
             <defs>
               <marker
@@ -251,24 +292,24 @@ export default function CausalKnowledgeGraph({
         </div>
 
         {/* Right Column: Interactive Shock Simulator Panel */}
-        <div className="lg:col-span-4 terminal-card p-5 rounded-2xl flex flex-col gap-4">
+        <div className="lg:col-span-4 terminal-card p-4 sm:p-5 rounded-2xl flex flex-col gap-4">
           <div className="pb-3 border-b border-slate-800">
             <span className="text-slate-200 font-bold uppercase tracking-wider flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-emerald-400" />
               CAUSAL SHOCKWAVE SIMULATOR
             </span>
             <div className="text-[11px] text-slate-400 mt-1">
-              {activeNode ? `Origin: ${activeNode.label}` : 'Select any node on the graph to inject a supply or geopolitical shock.'}
+              {activeNode ? `Origin: ${activeNode.label}` : 'Select any node above or tap a quick shock chip to trace contagion.'}
             </div>
           </div>
 
           {activeNode ? (
             <div className="flex flex-col gap-4">
               {/* Trigger Button & Slider */}
-              <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col gap-3">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-col gap-3">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">Shock Intensity:</span>
-                  <span className="text-cyan-400 font-bold">{shockIntensity}x Severity</span>
+                  <span className="text-cyan-400 font-bold text-sm">{shockIntensity}x Severity</span>
                 </div>
                 <input
                   type="range"
@@ -277,29 +318,29 @@ export default function CausalKnowledgeGraph({
                   step="0.5"
                   value={shockIntensity}
                   onChange={(e) => setShockIntensity(parseFloat(e.target.value))}
-                  className="w-full accent-cyan-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer"
+                  className="w-full accent-cyan-500 bg-slate-800 h-2.5 rounded-lg cursor-pointer"
                 />
 
                 <button
-                  onClick={handleSimulateShock}
+                  onClick={() => handleSimulateShock()}
                   disabled={loadingShock}
-                  className="w-full py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-bold flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(6,182,212,0.3)] cursor-pointer disabled:opacity-50"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-black flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(6,182,212,0.3)] cursor-pointer disabled:opacity-50 active:scale-95 text-xs"
                 >
                   <Flame className="w-4 h-4 fill-current" />
-                  {loadingShock ? 'Propagating Shockwave...' : 'SIMULATE SHOCKWAVE'}
+                  {loadingShock ? 'Propagating Contagion...' : 'SIMULATE SHOCKWAVE'}
                 </button>
               </div>
 
               {/* Shock Output Results */}
               {shockResult && (
                 <div className="flex flex-col gap-3 overflow-y-auto max-h-[360px] pr-1">
-                  <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 leading-relaxed">
+                  <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 leading-relaxed">
                     <span className="text-cyan-400 font-bold block mb-1">Causal Cascade Summary:</span>
                     {shockResult.executive_summary}
                   </div>
 
-                  <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">
-                    Impacted Sectors & Equities ({shockResult.impacted_entities?.length || 0})
+                  <span className="font-bold text-slate-400 uppercase tracking-wider text-[11px]">
+                    Impacted Entities ({shockResult.impacted_entities?.length || 0})
                   </span>
 
                   <div className="flex flex-col gap-2">
@@ -308,13 +349,13 @@ export default function CausalKnowledgeGraph({
                       return (
                         <div
                           key={idx}
-                          className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs"
+                          className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs"
                         >
                           <div>
                             <span className="font-bold text-slate-200">{item.label}</span>
                             <span className="text-[10px] text-slate-500 block">{item.transmission_mechanism}</span>
                           </div>
-                          <span className={`font-bold font-mono ${isPos ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          <span className={`font-bold font-mono text-sm ${isPos ? 'text-emerald-400' : 'text-rose-400'}`}>
                             {isPos ? '+' : ''}{item.estimated_delta_pct}%
                           </span>
                         </div>
@@ -325,9 +366,9 @@ export default function CausalKnowledgeGraph({
               )}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-64 text-center text-slate-500 gap-2">
+            <div className="flex flex-col items-center justify-center h-56 text-center text-slate-500 gap-2">
               <Network className="w-8 h-8 opacity-40 text-cyan-400" />
-              <p>Click any node on the left canvas to begin causal shock modeling.</p>
+              <p className="text-xs max-w-xs">Tap any node on the graph canvas or pick a quick shock above to trace causality.</p>
             </div>
           )}
         </div>

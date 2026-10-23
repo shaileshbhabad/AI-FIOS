@@ -244,7 +244,7 @@ export default function App() {
       />
 
       {/* Main Terminal Viewport */}
-      <main className="flex-1 p-3 sm:p-6 max-w-[1720px] w-full mx-auto">
+      <main className="flex-1 px-3 sm:px-6 py-3.5 sm:py-6 max-w-[1720px] w-full mx-auto">
         {activeTab === 'terminal' && (
           <div className="flex flex-col gap-6">
             <MarketChart
