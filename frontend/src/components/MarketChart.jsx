@@ -18,9 +18,11 @@ import {
   Sliders, 
   Eye, 
   EyeOff,
-  Clock,
-  ShieldCheck,
-  Award
+  Calculator,
+  DollarSign,
+  IndianRupee,
+  Activity,
+  Maximize2
 } from 'lucide-react';
 
 export default function MarketChart({ 
@@ -35,6 +37,12 @@ export default function MarketChart({
   const [showBB, setShowBB] = useState(false);
   const [showVolume, setShowVolume] = useState(true);
   const [activeIndicator, setActiveIndicator] = useState('rsi');
+  const [chartMode, setChartMode] = useState('area'); // 'area', 'line', 'bar'
+  
+  // Interactive Position & Profit Simulator State
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [investedCapital, setInvestedCapital] = useState(100000); // 1 Lakh INR default
+  const [targetMovePct, setTargetMovePct] = useState(10.0); // +10% target
 
   const currSymbol = summary?.currency_symbol || (currency === 'INR' ? '₹' : '$');
   const currentPrice = summary?.display_price ?? summary?.current_price ?? 0;
@@ -42,6 +50,13 @@ export default function MarketChart({
   const changePct = summary?.change_percent ?? 0;
   const isPositive = priceChange >= 0;
   const unit = summary?.symbol === '^TNX' ? '%' : '';
+
+  // Simulator Calculations
+  const shareCount = currentPrice > 0 ? Math.floor(investedCapital / currentPrice) : 0;
+  const simulatedTargetPrice = currentPrice * (1 + (targetMovePct / 100.0));
+  const simulatedProfit = (simulatedTargetPrice - currentPrice) * shareCount;
+  const stopLossPct = summary?.historical_volatility ? (summary.historical_volatility * 0.35) : 5.0;
+  const maxRiskLoss = investedCapital * (stopLossPct / 100.0);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -129,7 +144,7 @@ export default function MarketChart({
             ))}
           </div>
 
-          {/* Overlays */}
+          {/* Overlays & Calculator Toggle */}
           <div className="flex items-center gap-1.5 text-xs font-mono">
             <button
               onClick={() => setShowSMA(!showSMA)}
@@ -152,22 +167,106 @@ export default function MarketChart({
               BBands {showBB ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
             </button>
             <button
-              onClick={() => setShowVolume(!showVolume)}
-              className={`px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-1 cursor-pointer ${
-                showVolume
-                  ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800'
-                  : 'bg-slate-900 text-slate-500 border-slate-800'
+              onClick={() => setShowCalculator(!showCalculator)}
+              className={`px-2.5 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer font-bold ${
+                showCalculator
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                  : 'bg-slate-900 text-emerald-400 border-emerald-800/60 hover:bg-emerald-950/40'
               }`}
             >
-              Vol {showVolume ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+              <Calculator className="w-3.5 h-3.5" />
+              P&L Simulator
             </button>
           </div>
         </div>
       </div>
 
+      {/* Interactive Position P&L Simulator Drawer */}
+      {showCalculator && (
+        <div className="terminal-card p-5 rounded-2xl border border-emerald-500/40 bg-[#07111c] animate-fadeIn font-mono text-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+            <span className="font-bold text-emerald-400 flex items-center gap-2 text-sm uppercase tracking-wider">
+              <Calculator className="w-4 h-4" />
+              INTERACTIVE POSITION & PROFIT SIMULATOR ({currency})
+            </span>
+            <button
+              onClick={() => setShowCalculator(false)}
+              className="text-slate-400 hover:text-slate-200 cursor-pointer text-xs"
+            >
+              ✕ Close
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Capital Slider */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-baseline">
+                <span className="text-slate-400">Position Size Capital:</span>
+                <span className="text-slate-100 font-bold text-sm">
+                  {currSymbol}{investedCapital.toLocaleString()}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="10000"
+                max="2000000"
+                step="10000"
+                value={investedCapital}
+                onChange={(e) => setInvestedCapital(parseFloat(e.target.value))}
+                className="w-full accent-emerald-500 bg-slate-800 h-2 rounded-lg cursor-pointer"
+              />
+              <span className="text-[10px] text-slate-500">
+                Purchases approximately <strong className="text-cyan-400">{shareCount} shares</strong> at {currSymbol}{currentPrice.toLocaleString()}
+              </span>
+            </div>
+
+            {/* Target Move Slider */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-baseline">
+                <span className="text-slate-400">Target Move Objective:</span>
+                <span className={`font-bold text-sm ${targetMovePct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {targetMovePct >= 0 ? '+' : ''}{targetMovePct}% (➔ {currSymbol}{simulatedTargetPrice.toFixed(2)})
+                </span>
+              </div>
+              <input
+                type="range"
+                min="-20"
+                max="50"
+                step="1"
+                value={targetMovePct}
+                onChange={(e) => setTargetMovePct(parseFloat(e.target.value))}
+                className="w-full accent-cyan-500 bg-slate-800 h-2 rounded-lg cursor-pointer"
+              />
+              <span className="text-[10px] text-slate-500">
+                Adjust expected price target percentage
+              </span>
+            </div>
+
+            {/* Projected P&L Display Card */}
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">
+                  PROJECTED RETURN AT TARGET
+                </span>
+                <div className={`text-2xl font-black ${simulatedProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {simulatedProfit >= 0 ? '+' : ''}{currSymbol}{Math.round(simulatedProfit).toLocaleString()}
+                </div>
+              </div>
+              <div className="flex justify-between text-[10px] text-slate-400 mt-2 pt-2 border-t border-slate-800">
+                <span>Stop-Loss Risk (-{stopLossPct.toFixed(1)}%):</span>
+                <span className="text-rose-400 font-bold">-{currSymbol}{Math.round(maxRiskLoss).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Candlestick / Area Chart Container */}
-      <div className="terminal-card p-5 rounded-2xl">
-        <div className="h-[380px] w-full">
+      <div className="terminal-card p-5 rounded-2xl relative overflow-hidden">
+        {/* Subtle radial ambient glow behind chart */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="h-[380px] w-full relative z-10">
           {candles && candles.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={candles} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -285,7 +384,7 @@ export default function MarketChart({
 
       {/* Fundamental & Institutional Metrics Ribbon in ₹ INR */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 font-mono text-xs">
-        <div className="terminal-card p-3 rounded-xl border-l-2 border-l-cyan-500">
+        <div className="terminal-card p-3.5 rounded-xl border-l-2 border-l-cyan-500">
           <span className="text-slate-500 text-[10px] uppercase">Trailing P/E</span>
           <div className="text-slate-200 font-bold text-sm mt-0.5">
             {summary?.pe_ratio ? `${summary.pe_ratio}x` : 'N/A'}
@@ -293,7 +392,7 @@ export default function MarketChart({
           <span className="text-[10px] text-slate-400">Fwd: {summary?.forward_pe ?? 'N/A'}x</span>
         </div>
 
-        <div className="terminal-card p-3 rounded-xl border-l-2 border-l-emerald-500">
+        <div className="terminal-card p-3.5 rounded-xl border-l-2 border-l-emerald-500">
           <span className="text-slate-500 text-[10px] uppercase">Market Cap</span>
           <div className="text-slate-200 font-bold text-sm mt-0.5">
             {summary?.market_cap ? `${currSymbol}${(summary.market_cap / (currency === 'INR' ? 1e11 : 1e12)).toFixed(2)}${currency === 'INR' ? ' Lakh Cr' : 'T'}` : 'N/A'}
@@ -301,7 +400,7 @@ export default function MarketChart({
           <span className="text-[10px] text-slate-400">Beta: {summary?.beta ?? 1.05}</span>
         </div>
 
-        <div className="terminal-card p-3 rounded-xl border-l-2 border-l-amber-500">
+        <div className="terminal-card p-3.5 rounded-xl border-l-2 border-l-amber-500">
           <span className="text-slate-500 text-[10px] uppercase">52-Wk Range</span>
           <div className="text-slate-200 font-bold text-xs mt-0.5">
             {currSymbol}{summary?.display_low?.toLocaleString() ?? 0} - {currSymbol}{summary?.display_high?.toLocaleString() ?? 0}
@@ -309,7 +408,7 @@ export default function MarketChart({
           <span className="text-[10px] text-slate-400">Mean Target: {currSymbol}{summary?.display_target?.toLocaleString() ?? 0}</span>
         </div>
 
-        <div className="terminal-card p-3 rounded-xl border-l-2 border-l-violet-500">
+        <div className="terminal-card p-3.5 rounded-xl border-l-2 border-l-violet-500">
           <span className="text-slate-500 text-[10px] uppercase">Ann. Volatility</span>
           <div className="text-slate-200 font-bold text-sm mt-0.5">
             {summary?.historical_volatility ?? 22.5}%
@@ -317,7 +416,7 @@ export default function MarketChart({
           <span className="text-[10px] text-slate-400">VaR (95% 1D): -{(summary?.historical_volatility ? (summary.historical_volatility * 0.103).toFixed(2) : '2.2')}%</span>
         </div>
 
-        <div className="terminal-card p-3 rounded-xl border-l-2 border-l-blue-500">
+        <div className="terminal-card p-3.5 rounded-xl border-l-2 border-l-blue-500">
           <span className="text-slate-500 text-[10px] uppercase">Put / Call Ratio</span>
           <div className="text-slate-200 font-bold text-sm mt-0.5">
             {summary?.put_call_ratio ?? 0.82}
@@ -325,7 +424,7 @@ export default function MarketChart({
           <span className="text-[10px] text-emerald-400">Bullish Skew</span>
         </div>
 
-        <div className="terminal-card p-3 rounded-xl border-l-2 border-l-rose-500">
+        <div className="terminal-card p-3.5 rounded-xl border-l-2 border-l-rose-500">
           <span className="text-slate-500 text-[10px] uppercase">Institutional Flow</span>
           <div className="text-slate-200 font-bold text-sm mt-0.5">
             {summary?.institutional_flow_score ?? 74}/100

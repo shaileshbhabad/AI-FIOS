@@ -9,6 +9,7 @@ import HistoricalAnalogMatcher from './components/HistoricalAnalogMatcher';
 import ScenarioSimulator from './components/ScenarioSimulator';
 import PortfolioTester from './components/PortfolioTester';
 import ResearchMemoViewer from './components/ResearchMemoViewer';
+import CommandPalette from './components/CommandPalette';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('terminal');
@@ -16,6 +17,7 @@ export default function App() {
   const [timeframe, setTimeframe] = useState('1M');
   const [currency, setCurrency] = useState('INR'); // Default INR ₹
   const [marketFilter, setMarketFilter] = useState('All');
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
 
   // API Data States
   const [watchlist, setWatchlist] = useState([]);
@@ -192,6 +194,21 @@ export default function App() {
         setCurrency={setCurrency}
         marketFilter={marketFilter}
         setMarketFilter={setMarketFilter}
+        onOpenCommandPalette={setIsCommandOpen}
+      />
+
+      {/* Global Command Palette (Ctrl + K) */}
+      <CommandPalette
+        isOpen={isCommandOpen}
+        onClose={setIsCommandOpen}
+        onSelectAsset={(sym) => setSelectedAsset(sym)}
+        onSelectTab={(tabId) => setActiveTab(tabId)}
+        watchlist={watchlist}
+        currency={currency}
+        onToggleCurrency={() => setCurrency(currency === 'INR' ? 'USD' : 'INR')}
+        onTriggerVoice={() => {
+          setActiveTab('debate');
+        }}
       />
 
       {/* Real-Time Ticker Tape with ₹ INR formatting */}

@@ -27,7 +27,8 @@ export default function Navbar({
   currency = 'INR',
   setCurrency,
   marketFilter = 'All',
-  setMarketFilter
+  setMarketFilter,
+  onOpenCommandPalette
 }) {
   const [showSettings, setShowSettings] = useState(false);
   const [provider, setProvider] = useState('groq');
@@ -158,6 +159,17 @@ export default function Navbar({
           >
             {currency === 'INR' ? <IndianRupee className="w-3.5 h-3.5" /> : <DollarSign className="w-3.5 h-3.5" />}
             <span>{currency === 'INR' ? '₹ INR (Default)' : '$ USD'}</span>
+          </button>
+
+          {/* Command Palette Trigger */}
+          <button
+            onClick={() => onOpenCommandPalette && onOpenCommandPalette(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900/90 border border-slate-700 hover:border-cyan-500 rounded-lg text-xs font-mono text-slate-300 hover:text-cyan-300 transition-all cursor-pointer"
+            title="Open Command Palette (Ctrl + K)"
+          >
+            <Search className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">Quick Jump</span>
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-cyan-400 border border-slate-700">Ctrl+K</kbd>
           </button>
 
           {/* Search Asset Dropdown */}

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { 
   Cpu, 
   Scale, 
   ShieldAlert, 
-  CheckCircle2, 
-  AlertTriangle, 
   Play, 
   Pause, 
   RotateCcw, 
@@ -15,7 +14,11 @@ import {
   Layers,
   Sparkles,
   Vote,
-  Gavel
+  Gavel,
+  Volume2,
+  VolumeX,
+  FastForward,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function AgentDebateArena({ 
@@ -31,7 +34,9 @@ export default function AgentDebateArena({
   // Live Streaming States
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamIndex, setStreamIndex] = useState(0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1); // 1x or 2x
   const [allMessages, setAllMessages] = useState([]);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const opinions = debateData?.independent_agent_opinions || [];
   const transcript = debateData?.debate_transcript || [];
@@ -66,19 +71,75 @@ export default function AgentDebateArena({
     let timer;
     if (isStreaming && allMessages.length > 0) {
       if (streamIndex < allMessages.length) {
+        const delay = playbackSpeed === 2 ? 1100 : 2200;
         timer = setTimeout(() => {
           setStreamIndex((prev) => prev + 1);
-        }, 2200);
+        }, delay);
       } else {
         setIsStreaming(false);
+        // Trigger celebratory confetti on judge verdict completion!
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.35 },
+          colors: ['#10b981', '#06b6d4', '#f59e0b', '#8b5cf6']
+        });
       }
     }
     return () => clearTimeout(timer);
-  }, [isStreaming, streamIndex, allMessages]);
+  }, [isStreaming, streamIndex, allMessages, playbackSpeed]);
 
   const handleStartStream = () => {
     setStreamIndex(0);
     setIsStreaming(true);
+  };
+
+  const handleSkipToJudge = () => {
+    setStreamIndex(allMessages.length);
+    setIsStreaming(false);
+    confetti({
+      particleCount: 90,
+      spread: 75,
+      origin: { y: 0.35 },
+      colors: ['#10b981', '#06b6d4', '#f59e0b', '#8b5cf6']
+    });
+  };
+
+  // AI Voice Synthesis for Judge Synthesis
+  const handleToggleVoice = () => {
+    if (!('speechSynthesis' in window)) {
+      alert('Speech synthesis not supported in this browser.');
+      return;
+    }
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const speechText = (
+      `AI-FIOS Financial Intelligence Operating System committee ruling on ${symbol}. ` +
+      `Consensus verdict: ${verdict.verdict || 'Strong Buy'}. ` +
+      `Recommended action: ${verdict.action_code || 'Accumulate'}. ` +
+      `Target objective: ${verdict.recommended_positioning?.target_objective || 'Target objective confirmed'}. ` +
+      `Stop loss protection: ${verdict.recommended_positioning?.stop_loss_protection || 'Protected'}. ` +
+      `${verdict.judge_synthesis || ''}`
+    );
+
+    const utterance = new SpeechSynthesisUtterance(speechText);
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const naturalVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Neural')));
+    if (naturalVoice) utterance.voice = naturalVoice;
+
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
   };
 
   const getStanceColor = (stance) => {
@@ -100,7 +161,7 @@ export default function AgentDebateArena({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="p-1 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/40">
+              <span className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/40">
                 <Gavel className="w-4 h-4" />
               </span>
               <span className="text-xs font-bold tracking-widest text-cyan-400 uppercase">
@@ -125,8 +186,23 @@ export default function AgentDebateArena({
             </p>
           </div>
 
-          {/* Trigger Streaming Button */}
+          {/* Trigger Streaming & Voice Controls */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            {/* AI Voice Briefing Button */}
+            <button
+              onClick={handleToggleVoice}
+              className={`px-3 py-3 rounded-xl border flex items-center justify-center gap-1.5 font-bold transition-all cursor-pointer ${
+                isSpeaking
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 animate-pulse'
+                  : 'bg-slate-900 border-slate-700 hover:border-cyan-500 text-cyan-300'
+              }`}
+              title="Listen to Judge Agent Audio Verdict"
+            >
+              {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              <span>{isSpeaking ? 'Stop Voice' : 'Listen Aloud'}</span>
+            </button>
+
+            {/* Stream Play/Pause */}
             <button
               onClick={isStreaming ? () => setIsStreaming(false) : handleStartStream}
               className="px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all cursor-pointer"
@@ -134,15 +210,37 @@ export default function AgentDebateArena({
               {isStreaming ? (
                 <>
                   <Pause className="w-4 h-4 fill-current" />
-                  PAUSE STREAM
+                  PAUSE
                 </>
               ) : (
                 <>
                   <Play className="w-4 h-4 fill-current" />
-                  START LIVE STREAM DEBATE
+                  LIVE STREAM DEBATE
                 </>
               )}
             </button>
+
+            {/* Speed Toggle */}
+            {isStreaming && (
+              <button
+                onClick={() => setPlaybackSpeed(playbackSpeed === 1 ? 2 : 1)}
+                className="px-2.5 py-3 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 font-bold hover:text-white"
+                title="Toggle playback speed"
+              >
+                {playbackSpeed}x
+              </button>
+            )}
+
+            {isStreaming && (
+              <button
+                onClick={handleSkipToJudge}
+                className="px-3 py-3 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 font-bold hover:text-cyan-400 flex items-center gap-1"
+                title="Skip to Judge verdict"
+              >
+                <FastForward className="w-3.5 h-3.5" />
+                Skip
+              </button>
+            )}
 
             <button
               onClick={onRunDebate}
@@ -183,7 +281,7 @@ export default function AgentDebateArena({
         <div className="flex items-center gap-2">
           <Vote className="w-4 h-4 text-cyan-400" />
           <span className="font-bold text-slate-300 uppercase tracking-wider text-xs">
-            Committee Voting Consensus ({opinions.length} Agents)
+            Committee Voting Consensus ({opinions.length} Specialized Agents)
           </span>
         </div>
 
@@ -271,14 +369,13 @@ export default function AgentDebateArena({
                 {isStreaming ? (
                   <span className="flex items-center gap-2 text-emerald-400">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                    LIVE STREAMING DEBATE TRANSCRIPT ({streamIndex + 1}/{allMessages.length})
+                    LIVE STREAMING DEBATE ({streamIndex + 1}/{allMessages.length})
                   </span>
                 ) : (
                   'MULTI-ROUND CROSS-EXAMINATION LOG'
                 )}
               </span>
 
-              {/* Round Tabs (if not streaming) */}
               {!isStreaming && (
                 <div className="flex items-center gap-1 text-[11px]">
                   {transcript.map((rd, idx) => (
@@ -318,9 +415,8 @@ export default function AgentDebateArena({
                     </span>
                   </div>
 
-                  {/* Internal Thought Monologue */}
                   {msg.thought_process && (
-                    <div className="mb-2 p-2 rounded bg-slate-950/80 border border-slate-800/80 text-[10px] text-cyan-400 flex items-start gap-1.5">
+                    <div className="mb-2 p-2.5 rounded bg-slate-950/80 border border-slate-800 text-[10px] text-cyan-400 flex items-start gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>{msg.thought_process}</span>
                     </div>
@@ -334,7 +430,6 @@ export default function AgentDebateArena({
             </div>
           </div>
 
-          {/* Selected Agent Deep-Dive Drawer */}
           {selectedAgent && (
             <div className="terminal-card p-4 rounded-xl border-l-4 border-l-cyan-500 text-xs">
               <div className="flex items-center justify-between">
