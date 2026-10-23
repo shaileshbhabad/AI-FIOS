@@ -8,7 +8,7 @@ import asyncio
 import json
 import os
 from typing import Dict, Any, List, Optional
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, HTTPException
+from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -73,9 +73,11 @@ class PortfolioRequest(BaseModel):
     currency: str = "INR"
 
 
-# REST Endpoints
+# Router definitions (works seamlessly with both /api prefix and root prefix)
+router = APIRouter()
 
-@app.get("/api/health")
+
+@router.get("/health")
 def health_check():
     return {
         "status": "online",
@@ -89,7 +91,7 @@ def health_check():
     }
 
 
-@app.get("/api/watchlist")
+@router.get("/watchlist")
 def get_watchlist(
     category: Optional[str] = Query(None),
     currency: str = Query("INR", pattern="^(INR|USD)$")
@@ -98,7 +100,7 @@ def get_watchlist(
     return market_service.get_watchlist(category=category, currency=currency)
 
 
-@app.get("/api/asset/{symbol}/summary")
+@router.get("/asset/{symbol}/summary")
 def get_asset_summary(
     symbol: str,
     currency: str = Query("INR", pattern="^(INR|USD)$")
@@ -107,7 +109,7 @@ def get_asset_summary(
     return market_service.get_asset_summary(symbol, currency=currency)
 
 
-@app.get("/api/asset/{symbol}/candles")
+@router.get("/asset/{symbol}/candles")
 def get_asset_candles(
     symbol: str,
     timeframe: str = Query("1M", pattern="^(1D|5D|1M|6M|1Y)$"),
@@ -117,7 +119,7 @@ def get_asset_candles(
     return market_service.get_historical_candles(symbol, timeframe, currency=currency)
 
 
-@app.get("/api/asset/{symbol}/orderbook")
+@router.get("/asset/{symbol}/orderbook")
 def get_order_book(
     symbol: str,
     currency: str = Query("INR", pattern="^(INR|USD)$")
@@ -126,7 +128,7 @@ def get_order_book(
     return market_service.get_order_book_depth(symbol, currency=currency)
 
 
-@app.get("/api/asset/{symbol}/debate")
+@router.get("/asset/{symbol}/debate")
 def get_agent_debate(
     symbol: str,
     currency: str = Query("INR", pattern="^(INR|USD)$")
@@ -135,7 +137,7 @@ def get_agent_debate(
     return debate_engine.run_full_debate(symbol, currency=currency)
 
 
-@app.get("/api/asset/{symbol}/explainability")
+@router.get("/asset/{symbol}/explainability")
 def get_explainability(
     symbol: str,
     currency: str = Query("INR", pattern="^(INR|USD)$")
@@ -145,7 +147,7 @@ def get_explainability(
     return debate["explainability"]
 
 
-@app.get("/api/asset/{symbol}/report")
+@router.get("/asset/{symbol}/report")
 def get_autonomous_research_report(
     symbol: str,
     currency: str = Query("INR", pattern="^(INR|USD)$")
@@ -154,25 +156,25 @@ def get_autonomous_research_report(
     return autonomous_research_agent.generate_institutional_report(symbol, currency=currency)
 
 
-@app.get("/api/knowledge-graph")
+@router.get("/knowledge-graph")
 def get_knowledge_graph():
     """Returns all entities, causal links, and impact weights for graph rendering."""
     return knowledge_graph_service.get_full_graph()
 
 
-@app.post("/api/knowledge-graph/simulate-shock")
+@router.post("/knowledge-graph/simulate-shock")
 def simulate_causal_shock(req: ShockSimRequest):
     """Interactive Causal Shock Simulator: Propagates disruption from any node."""
     return knowledge_graph_service.simulate_node_shock(req.node_id, req.intensity)
 
 
-@app.get("/api/knowledge-graph/asset/{symbol}")
+@router.get("/knowledge-graph/asset/{symbol}")
 def get_asset_causal_neighborhood(symbol: str):
     """Returns direct upstream causal events and drivers impacting a specific asset."""
     return knowledge_graph_service.get_asset_causal_neighborhood(symbol)
 
 
-@app.get("/api/historical-analogs")
+@router.get("/historical-analogs")
 def get_historical_analogs(
     vix: float = 22.5,
     pe: float = 27.0,
@@ -190,7 +192,7 @@ def get_historical_analogs(
     )
 
 
-@app.post("/api/scenario-simulator/run")
+@router.post("/scenario-simulator/run")
 def run_scenario_simulation(req: ScenarioRequest):
     """Runs what-if macroeconomic shock calculations."""
     return scenario_simulator.simulate(
@@ -202,44 +204,48 @@ def run_scenario_simulation(req: ScenarioRequest):
     )
 
 
-@app.get("/api/scenario-simulator/presets")
+@router.get("/scenario-simulator/presets")
 def get_scenario_presets():
     return scenario_simulator.get_presets()
 
 
-@app.get("/api/portfolio")
+@router.get("/portfolio")
 def get_default_portfolio(currency: str = Query("INR", pattern="^(INR|USD)$")):
     """Returns risk and allocation breakdown of institutional portfolio in ₹ INR."""
     return portfolio_engine.analyze_portfolio(currency=currency)
 
 
-@app.post("/api/portfolio/analyze")
+@router.post("/portfolio/analyze")
 def analyze_custom_portfolio(req: PortfolioRequest):
     """Evaluates user-uploaded portfolio positions."""
     holdings = [h.dict() for h in req.holdings]
     return portfolio_engine.analyze_portfolio(holdings, currency=req.currency)
 
 
-@app.get("/api/settings/llm")
+@router.get("/settings/llm")
 def get_llm_settings():
     """Returns active hybrid LLM provider status."""
     return hybrid_llm_engine.get_status()
 
 
-@app.post("/api/settings/llm")
+@router.post("/settings/llm")
 def configure_llm(req: LLMConfigRequest):
     """Allows user to enter an API key for Groq, OpenAI, or DeepSeek."""
     return hybrid_llm_engine.set_config(req.provider, req.api_key, req.model)
 
 
-@app.get("/api/agents")
+@router.get("/agents")
 def get_agent_roster():
     return AGENT_ROSTER
 
 
+# Mount router both at root and with /api prefix for bulletproof routing
+app.include_router(router)
+app.include_router(router, prefix="/api")
+
+
 # WebSocket for Live Market & Terminal Updates
-@app.websocket("/ws/stream")
-async def websocket_stream(websocket: WebSocket):
+async def _ws_handler(websocket: WebSocket):
     await websocket.accept()
     try:
         while True:
@@ -254,6 +260,14 @@ async def websocket_stream(websocket: WebSocket):
         pass
     except Exception:
         pass
+
+@app.websocket("/ws/stream")
+async def websocket_stream(websocket: WebSocket):
+    await _ws_handler(websocket)
+
+@app.websocket("/api/ws/stream")
+async def websocket_stream_api(websocket: WebSocket):
+    await _ws_handler(websocket)
 
 
 # Static Files Serving for Full-Stack Unified Deployment
